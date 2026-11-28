@@ -1,6 +1,7 @@
 import {
   Bot,
   BriefcaseBusiness,
+  ChartPie,
   CheckSquare2,
   ChevronLeft,
   FileText,
@@ -12,8 +13,9 @@ import { NavLink } from 'react-router-dom'
 import { useTasks } from '../../hooks/useTasks'
 
 const navigation = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { label: 'My tasks', to: '/tasks', icon: CheckSquare2 },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Tasks', to: '/tasks', icon: CheckSquare2 },
+  { label: 'Analytics', to: '/analytics', icon: ChartPie },
   { label: 'Projects', to: '/projects', icon: BriefcaseBusiness },
   { label: 'Team', to: '/team', icon: UsersRound },
   { label: 'Documents', to: '/documents', icon: FileText },
@@ -51,7 +53,7 @@ export function Sidebar({ open, onClose }) {
             >
               <Icon size={18} strokeWidth={1.8} />
               <span>{label}</span>
-              {label === 'My tasks' && <span className="nav-count">{openTaskCount}</span>}
+              {label === 'Tasks' && <span className="nav-count">{openTaskCount}</span>}
             </NavLink>
           ))}
         </nav>

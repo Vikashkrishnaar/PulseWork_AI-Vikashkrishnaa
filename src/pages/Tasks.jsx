@@ -1,9 +1,24 @@
-import { ListFilter, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { ListFilter, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { TaskCard } from '../components/dashboard/TaskCard'
 import { useTasks } from '../hooks/useTasks'
+import { api } from '../services/api'
+
+function getUsers(signal) {
+  return api.get('/users', { signal }).then((response) => {
+    if (!Array.isArray(response.data)) {
+      throw new Error('The user response was not a list.')
+    }
+    return response.data
+  })
+}
 
 export function Tasks() {
+  const [users, setUsers] = useState([])
+  const [usersLoading, setUsersLoading] = useState(true)
+  const [usersError, setUsersError] = useState('')
+  const requestController = useRef(null)
   const {
     tasks,
     filteredTasks,
@@ -19,6 +34,43 @@ export function Tasks() {
   } = useTasks()
   const { openCreate, openEdit } = useOutletContext()
 
+  function refreshUsers() {
+    requestController.current?.abort()
+    const controller = new AbortController()
+    requestController.current = controller
+    setUsersLoading(true)
+    setUsersError('')
+
+    getUsers(controller.signal)
+      .then(setUsers)
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setUsersError('Unable to load users right now. Check your connection and try again.')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setUsersLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    const controller = new AbortController()
+    requestController.current = controller
+
+    getUsers(controller.signal)
+      .then(setUsers)
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setUsersError('Unable to load users right now. Check your connection and try again.')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setUsersLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [])
+
   function confirmDelete(task) {
     if (window.confirm(`Delete “${task.title}”? This cannot be undone.`)) {
       deleteTask(task.id)
@@ -31,6 +83,45 @@ export function Tasks() {
         <div><span className="eyebrow">YOUR WORKSPACE</span><h1>My tasks</h1><p>Keep track of the work that moves your team forward.</p></div>
         <button className="button button-primary" onClick={openCreate}><Plus size={17} /> Create task</button>
       </div>
+      <section className="panel directory-panel" aria-labelledby="sample-users-heading" aria-busy={usersLoading}>
+        <div className="panel-heading directory-heading">
+          <div>
+            <h2 id="sample-users-heading">Sample user directory</h2>
+            <p>Mock data from JSONPlaceholder; it is not saved to your workspace.</p>
+          </div>
+          <button className="button button-quiet" type="button" onClick={refreshUsers} disabled={usersLoading}>
+            <RefreshCw size={15} /> {usersLoading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
+        {usersLoading ? (
+          <div className="directory-message" role="status">Loading users...</div>
+        ) : usersError ? (
+          <div className="directory-message directory-error" role="alert">
+            <p>{usersError}</p>
+            <button className="button button-quiet" type="button" onClick={refreshUsers}>Try again</button>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="directory-message" role="status">No users were returned by the sample API.</div>
+        ) : (
+          <div className="directory-table-wrap">
+            <table className="directory-table">
+              <thead>
+                <tr><th>Name</th><th>Email</th><th>Phone</th><th>Website</th></tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.phone}</td>
+                    <td>{user.website}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
       <div className="task-list-toolbar">
         <label className="task-search">
           <Search size={16} />

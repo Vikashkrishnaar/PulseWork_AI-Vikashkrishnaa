@@ -15,7 +15,7 @@ cp .env.example .env
 npm run dev
 ```
 
-In PowerShell, use `Copy-Item .env.example .env` instead of `cp`. The API client reads `VITE_API_BASE_URL`, but the current task experience uses local storage and does not send requests.
+In PowerShell, use `Copy-Item .env.example .env` instead of `cp`. The Tasks page also reads sample user data from JSONPlaceholder using the API client configured by `VITE_API_BASE_URL`. This is mock API data, not persistent or enterprise user data.
 
 ## Available scripts
 
